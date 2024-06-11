@@ -1,0 +1,51 @@
+program         =  { SOI ~ (statement* ~ EOI) }
+statement       = _{ function_declaration | foreach_statement | print_statement | connect_command | external_definition | if_statement | listen_command | let_statement | expression_statement}
+let_statement   =  { identifier ~ "=" ~ expression ~ ";" }
+print_statement =  { "print" ~ expression ~ ";" }
+connect_command =  { "connect" ~ host ~ port ~ "{" ~ expression ~ "}" ~ ";" }
+external_definition = { "external" ~ identifier ~ "{" ~ external_body ~ "}" ~ ";" }
+if_statement    = { "if" ~ "(" ~ expression ~ ")" ~ block ~ ( ";" | else_clause?) }
+listen_command  = { "listen" ~ port ~ ";"}
+expression_statement = { expression ~ ";"}
+foreach_statement = { "foreach" ~ identifier ~ "in" ~ expression ~ block }
+function_declaration = { execute ~ "=" ~ block_expression ~ ";"}
+
+
+block           = { "{" ~ statement* ~ "}" }
+block_expression =  { "{" ~ (statement | expression_statement)* ~ expression? ~ "}" }
+
+else_clause     = _{ "else" ~ (if_statement | block) ~ ";" }
+
+external_body   = { file_decl ~ args_decl ~ defaults_decl? }
+file_decl       = { "file" ~ ":" ~ string }
+args_decl       = { "args" ~ ":" ~ string }
+defaults_decl   = { "defaults" ~ ":" ~ "{" ~ (default_pair ~ (default_pair)*)? ~ "}" }
+default_pair    = { identifier ~ ":" ~ string }
+
+
+expression =  { range | block_expression | array_literal | sum}
+symbol     =  { ASCII_ALPHA_UPPER* }
+execute    =  { identifier ~ "(" ~ (expression ~ ("," ~ expression)*?)? ~ ")" }
+sum        = _{ term ~ ((add | subtract | cmp ) ~ term)* }
+term       = _{ execute | array_access | number | identifier | string | boolean | symbol}
+identifier = @{ ASCII_ALPHA_LOWER ~ (ASCII_DIGIT | ASCII_ALPHA_LOWER | "_")* }
+number     = @{ ASCII_DIGIT+ }
+string     = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+boolean       = @{"True" | "False"}
+// Define string literals enclosed in double quotes
+add      = { "+" }
+subtract = { "-" }
+cmp      = { "==" }
+range    = { "(" ~ expression ~ ".." ~ expression ~ ")"}
+
+host         = _{ ip | hostname }
+hostname     =  { identifier ~ "." ~ identifier }
+ip           = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+){3} }
+alphanumeric =  { ASCII_ALPHANUMERIC }
+port         = @{ ASCII_DIGIT+ }
+
+array_literal = { "[" ~ (expression ~ ("," ~ expression)*)? ~ "]" }
+array_access  = { identifier ~ "[" ~ expression ~ "]" }
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT    = _{ "//" ~ (!"//" ~ ANY)* ~ "//" }

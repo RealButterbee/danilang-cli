@@ -1,0 +1,4 @@
+external test {
+    file = "echo"
+    args = "{text}"
+};
